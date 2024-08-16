@@ -3,9 +3,103 @@
  */
 package org.example;
 
-import org.testng.annotations.*;
-import static org.testng.Assert.*;
+import java.time.Duration;
+
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.PageFactory;
+import org.openqa.selenium.support.pagefactory.AjaxElementLocatorFactory;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.testng.Assert;
+import org.testng.annotations.AfterSuite;
+import org.testng.annotations.BeforeSuite;
+import org.testng.annotations.Test;
+
+import com.relevantcodes.extentreports.ExtentReports;
+import com.relevantcodes.extentreports.ExtentTest;
+import com.relevantcodes.extentreports.LogStatus;
+
 
 public class AppTest {
-    // Write the testcase
+
+    String home_page_URL = "https://www.amazon.in/";
+
+    // Find the search box
+    @FindBy(id = "twotabsearchtextbox") WebElement searchBox;
+    // Find the search button
+    @FindBy(id = "nav-search-submit-button") WebElement searchButton;
+
+    // Take the path for 
+    @FindBy(css = ".a-size-medium.a-color-base.a-text-normal") WebElement item;
+
+
+    ExtentReports report;
+    ExtentTest test;
+
+    WebDriver driver;
+    // Create the driver 
+    @BeforeSuite(alwaysRun = true)
+    public void createDriver(){
+        DriverSingleton driverSingleton = new DriverSingleton();
+        driver = driverSingleton.getInstence();
+        PageFactory.initElements(new AjaxElementLocatorFactory(driver, 20), this);
+        
+        // Call the ReportSingleton to generate the result
+        ReportSingleton reportSingleton = ReportSingleton.getInstanceOfSingletonReport();
+        report = reportSingleton.getReport();
+        test = report.startTest("SearchProduct");
+    }
+
+    // Write the Test Case
+
+    @Test(description="Verify the search functionality")
+    public void verifySearchFunctionality(){
+        try {
+            // open the url
+            driver.get(this.home_page_URL);
+
+            // wait for url to load
+            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+            wait.until(ExpectedConditions.urlToBe(this.home_page_URL));
+            test.log(LogStatus.INFO,"Screenshot: "+ test.addScreenCapture(ReportSingleton.captureScreenShot(driver)));
+
+            String currentUrl = driver.getCurrentUrl();
+
+            // Verify The URL
+            Assert.assertEquals(this.home_page_URL,currentUrl);
+
+            // locate the search box and send the key word
+            searchBox.sendKeys("laptop");
+
+            // Click on search button
+            searchButton.click();
+
+            // Wait for result to load
+            wait.until(ExpectedConditions.visibilityOf(item));
+
+            // Thread.sleep(2000);
+            String result = item.getText();
+
+            boolean status = result.contains("Laptop");
+            // verify the result
+            Assert.assertTrue(status, "Result does not contains the search item");
+            test.log(LogStatus.INFO,"Screenshot: "+ test.addScreenCapture(ReportSingleton.captureScreenShot(driver)));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (driver != null) {
+                driver.quit();  // Ensure that the WebDriver is properly closed
+            }
+        }
+        
+    }
+
+    @AfterSuite
+    public void closeDriver(){         
+        report.endTest(test);
+        report.flush();
+    } 
 }
