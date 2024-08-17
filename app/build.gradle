@@ -47,7 +47,8 @@ application {
 tasks.named('test') {
     // Use TestNG for unit tests.
     useTestNG(){
-        useDefaultListeners = true        
+        useDefaultListeners = true  
+        suites 'src/test/java/org/example/TestNG.xml'      
     }
 
     afterSuite { desc, result ->
